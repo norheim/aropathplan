@@ -19,15 +19,16 @@ N = Int(T/dt);
 x0 = [0;0;0;0]
 xN = [0.03;0;0.035;0]
 ϵ = [0.01;
-        0.003;
-        0.01;
-        0.003]; # how close to the goal we want to get
+     0.003;
+     0.01;
+     0.003];
+    # how close to the goal we want to get
 
 # Obstacles
 # P = [-1 0; 0 1]
 # q = [-0.03; 0.03] # this should be feasible
 P = [-1 0; 0 1]
-q = [-0.02; 0.03]
+q = [-0.015; 0.03] 
 m = length(q)
 obj = [[1,2]] # Each entry corresponds to the lines defining an object
 Nobj = length(obj)
@@ -131,13 +132,13 @@ for i = 1:iterations
         y = zeros(4, N)
         y[:, 1] = x0
         for j = 2:N
-                #u = α_out[:, j - 1]
+                u = α_out[:, j - 1]
                 #         u = maximum.([α_out[:, j - 1], -α_out[:, j - 1]])
-        #         for k = 1:j-2
-        #                 u += ρ*s_out[get_cone(j,k),:] 
-        #                 #u += K_out[get_cone(j, k), :, :]*w[:, k]
-        #         end
-                y[:,j] = A*y[:, j-1] + Bw*w[:, j-1] + B*au_out[:,j-1]
+                for k = 1:j-2
+                        #u += ρ*s_out[get_cone(j,k),:] 
+                        u += K_out[get_cone(j, k), :, :]*w[:, k]
+                end
+                y[:,j] = A*y[:, j-1] + Bw*w[:, j-1] + B*u
         end
         xs2[i, :] = y[1,:]
         ys2[i, :] = y[3,:];
