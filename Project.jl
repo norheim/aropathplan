@@ -38,7 +38,7 @@ M = 100; #Big M
 Q = zeros(2,4)
 Q[1,1] = Q[2,3] = -1
 N_K = Int((N-2)*(N-1)/2) # number of K's
-#N_s = Int((N-2)*(N-1)/2)
+#N_s = Int((N-3)*(N-2)/2)
 Ak = zeros(N+1,4,4)
 Ak[1,:,:] = zeros(Int, size(A))+I
 for i=2:N+1
@@ -86,10 +86,10 @@ model = Model(optimizer_with_attributes(
 @constraint(model, α[:,1] .<= au[:,1])
 @constraint(model, -au[:,1] .<= α[:,1])
 @constraint(model, [k=2:N-1], (α[:,k]
-    +ρ*sum(s[get_cone(k+1,i),:] for i=1:k-2)
+    +ρ*sum(s[get_cone(k,i),:] for i=1:k-2)
     ) .<= au[:,k])
 @constraint(model, [k=2:N-1],  (-α[:,k]
-    +ρ*sum(s[get_cone(k+1,i),:] for i=1:k-2)
+    +ρ*sum(s[get_cone(k,i),:] for i=1:k-2)
     ) .<= au[:,k]);
 
 # Goals
