@@ -3,7 +3,7 @@ using JuMP, Gurobi, Plots, LinearAlgebra, Random
 GRB_ENV = Gurobi.Env();
 
 # Create model for dynamics
-dt = 0.1
+dt = 0.05
 A = zeros(4,4)+I
 A[1,2] = A[3,4] = dt
 B = zeros(4,2)
@@ -18,17 +18,17 @@ T = 0.9
 N = Int(T/dt);
 x0 = [0;0;0;0]
 xN = [0.03;0;0.035;0]
-ϵ = [0.01;
-     0.003;
-     0.01;
-     0.003];
+ϵ = [1e-5;
+     0.00125;
+     1e-5;
+     0.00125];
     # how close to the goal we want to get
 
 # Obstacles
 # P = [-1 0; 0 1]
 # q = [-0.03; 0.03] # this should be feasible
 P = [-1 0; 0 1]
-q = [-0.015; 0.03] 
+q = [-0.015; 0.03]
 m = length(q)
 obj = [[1,2]] # Each entry corresponds to the lines defining an object
 Nobj = length(obj)
@@ -38,6 +38,7 @@ M = 100; #Big M
 Q = zeros(2,4)
 Q[1,1] = Q[2,3] = -1
 N_K = Int((N-2)*(N-1)/2) # number of K's
+#N_s = Int((N-2)*(N-1)/2)
 Ak = zeros(N+1,4,4)
 Ak[1,:,:] = zeros(Int, size(A))+I
 for i=2:N+1
@@ -60,6 +61,8 @@ model = Model(optimizer_with_attributes(
 @variable(model, α[1:2, 1:N-1])      # Control law constant
 @variable(model, au[1:2, 1:N-1] >=0) # Absolute value of u(control)
 @variable(model, z[1:N-1, 1:m] >=0, Bin) # Binary vars for obstacles
+#@variable(model, minϵ[1:4] >=0)
+
 # Variables for auxiliary second order cones:
 @variable(model, t[1:N_K,1:m] >= 0) # (we need one for each halfplane)
 @variable(model, s[1:N_K,1:2] >= 0); # (one for each control vector)
@@ -83,10 +86,10 @@ model = Model(optimizer_with_attributes(
 @constraint(model, α[:,1] .<= au[:,1])
 @constraint(model, -au[:,1] .<= α[:,1])
 @constraint(model, [k=2:N-1], (α[:,k]
-    +ρ*sum(s[get_cone(k,i),:] for i=1:k-2) 
+    +ρ*sum(s[get_cone(k+1,i),:] for i=1:k-2)
     ) .<= au[:,k])
 @constraint(model, [k=2:N-1],  (-α[:,k]
-    +ρ*sum(s[get_cone(k,i),:] for i=1:k-2) 
+    +ρ*sum(s[get_cone(k+1,i),:] for i=1:k-2)
     ) .<= au[:,k]);
 
 # Goals
@@ -96,20 +99,25 @@ model = Model(optimizer_with_attributes(
         ) .<= xN+ϵ);
 @constraint(model, (-x_k_det(N,α)
         +sum(ρ*r[get_cone(N,i),:] for i=1:N-2)
-        +ρ*mapslices(norm, Bw, dims=2)[:] 
+        +ρ*mapslices(norm, Bw, dims=2)[:]
            ) .<= -xN+ϵ);
 
 # # Second order constraints
 
+# k=N
+# i=N-2
+# [get_cone(j+1,i) for j=(i+1):(k-1)]
+# get_cone(3,1)
+
 # Obstacles
 @constraint(model, [k=3:N,i=1:(k-2),l=1:m], vcat(t[get_cone(k,i),l], (P*Q*Ai(k-i-2)*Bw)[l,:]+sum(
-            (P*Q*Ai(k-j-1)*B*K[get_cone(j,i),:,:])[l,:] for j=(i+1):(k-1))) in SecondOrderCone());
+            (P*Q*Ai(k-j-1)*B*K[get_cone(j+1,i),:,:])[l,:] for j=(i+1):(k-1))) in SecondOrderCone());
 # Control
 @constraint(model, [k=3:N-1,i=1:(k-2),l=1:2], vcat(s[get_cone(k,i),l], sum(
-            K[get_cone(j,i),l,:] for j=(i+1):(k-1))) in SecondOrderCone());
+            K[get_cone(j+1,i),l,:] for j=(i+1):(k-1))) in SecondOrderCone());
 # Goals
 @constraint(model, [k=3:N,i=1:(k-2),l=1:4], vcat(r[get_cone(k,i),l], (Ai(k-i-2)*Bw)[l,:]+sum(
-            (Ai(k-j-1)*B*K[get_cone(j,i),:,:])[l,:] for j=(i+1):(k-1))) in SecondOrderCone());
+            (Ai(k-j-1)*B*K[get_cone(j+1,i),:,:])[l,:] for j=(i+1):(k-1))) in SecondOrderCone());
 # Objective
 @objective(model, Min, sum(au));
 
@@ -135,7 +143,7 @@ for i = 1:iterations
                 u = α_out[:, j - 1]
                 #         u = maximum.([α_out[:, j - 1], -α_out[:, j - 1]])
                 for k = 1:j-2
-                        #u += ρ*s_out[get_cone(j,k),:] 
+                        #u += ρ*s_out[get_cone(j,k),:]
                         u += K_out[get_cone(j, k), :, :]*w[:, k]
                 end
                 y[:,j] = A*y[:, j-1] + Bw*w[:, j-1] + B*u
