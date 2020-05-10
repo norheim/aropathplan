@@ -66,7 +66,7 @@ model = Model(optimizer_with_attributes(
 # Variables for auxiliary second order cones:
 @variable(model, t[1:N_K,1:m] >= 0) # (we need one for each halfplane)
 @variable(model, s[1:N_K,1:2] >= 0); # (one for each control vector)
-@variable(model, r[1:N_K,1:4] >= 0); # (one for each state variable)
+@variable(model, r[1:N-2,1:4] >= 0); # (one for each state variable)
 
 @constraint(model, [k=1:N-1, i=1:Nobj],
    sum(z[k,j] for j in obj[i]) == length(obj[i])-1); # Obstacles
@@ -82,7 +82,7 @@ model = Model(optimizer_with_attributes(
         +ρ*mapslices(norm, P*Q*Bw, dims=2)[:]
         ) .<= -q+M*z[k-1,:]);
 
-# Maximum control
+# Maximum control (2 inequalities per k)
 @constraint(model, α[:,1] .<= au[:,1])
 @constraint(model, -au[:,1] .<= α[:,1])
 @constraint(model, [k=2:N-1], (α[:,k]
@@ -92,13 +92,13 @@ model = Model(optimizer_with_attributes(
     +ρ*sum(s[get_cone(k,i),:] for i=1:k-2)
     ) .<= au[:,k]);
 
-# Goals
+# Goals (4 inequalities)
 @constraint(model, (x_k_det(N,α)
-        +sum(ρ*r[get_cone(N,i),:] for i=1:N-2)
+        +sum(ρ*r[i,:] for i=1:N-2)
         +ρ*mapslices(norm, Bw, dims=2)[:]
         ) .<= xN+ϵ);
 @constraint(model, (-x_k_det(N,α)
-        +sum(ρ*r[get_cone(N,i),:] for i=1:N-2)
+        +sum(ρ*r[i,:] for i=1:N-2)
         +ρ*mapslices(norm, Bw, dims=2)[:]
            ) .<= -xN+ϵ);
 
@@ -110,14 +110,14 @@ model = Model(optimizer_with_attributes(
 # get_cone(3,1)
 
 # Obstacles
-@constraint(model, [k=3:N,i=1:(k-2),l=1:m], vcat(t[get_cone(k,i),l], (P*Q*Ai(k-i-2)*Bw)[l,:]+sum(
+@constraint(model, [k=3:N,i=1:k-2,l=1:m], vcat(t[get_cone(k,i),l], (P*Q*Ai(k-i-2)*Bw)[l,:]+sum(
             (P*Q*Ai(k-j-1)*B*K[get_cone(j+1,i),:,:])[l,:] for j=(i+1):(k-1))) in SecondOrderCone());
 # Control
-@constraint(model, [k=3:N-1,i=1:(k-2),l=1:2], vcat(s[get_cone(k,i),l], sum(
+@constraint(model, [k=3:N-1,i=1:k-2,l=1:2], vcat(s[get_cone(k,i),l], sum(
             K[get_cone(j+1,i),l,:] for j=(i+1):(k-1))) in SecondOrderCone());
 # Goals
-@constraint(model, [k=3:N,i=1:(k-2),l=1:4], vcat(r[get_cone(k,i),l], (Ai(k-i-2)*Bw)[l,:]+sum(
-            (Ai(k-j-1)*B*K[get_cone(j+1,i),:,:])[l,:] for j=(i+1):(k-1))) in SecondOrderCone());
+@constraint(model, [i=1:N-2,l=1:4], vcat(r[i,l], (Ai(N-i-2)*Bw)[l,:]+sum(
+            (Ai(N-j-1)*B*K[get_cone(j+1,i),:,:])[l,:] for j=(i+1):(N-1))) in SecondOrderCone());
 # Objective
 @objective(model, Min, sum(au));
 
@@ -131,7 +131,7 @@ au_out = value.(au)
 
 rectangle(w, h, x, y) = Shape(ones(4)*x + [0,w,w,0], ones(4)*y + [0,0,h,h])
 
-iterations = 20
+iterations = 100
 Γ = 1
 xs2 = zeros(Float64, iterations, N)
 ys2 = zeros(Float64, iterations, N)
@@ -168,9 +168,9 @@ for i = 1:iterations
 end
 println(faults)
 
-plot(rectangle(0.035,0.03,0.015,0), opacity=.5, legend=:none)
+pl = plot(rectangle(0.035,0.03,0.015,0), opacity=.5, legend=:none)
 plot!(xs2[:,:]', ys2[:,:]', linestyle=:dash, markershape=:circle, ms=2)
-
+display(pl)
 
 # Polygon constructor
 ap = (p1,p2) -> [p1[2]-p2[2],p2[1]-p1[1]]
