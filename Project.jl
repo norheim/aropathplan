@@ -3,7 +3,7 @@ using JuMP, Gurobi, Plots, LinearAlgebra, Random
 GRB_ENV = Gurobi.Env();
 
 # Create model for dynamics
-dt = 0.05
+dt = 0.1
 A = zeros(4,4)+I
 A[1,2] = A[3,4] = dt
 B = zeros(4,2)
@@ -19,9 +19,9 @@ N = Int(T/dt);
 x0 = [0;0;0;0]
 xN = [0.03;0;0.035;0]
 ϵ = [1e-4;
-     0.00125;
+     0.00255;
      1e-4;
-     0.00125];
+     0.00255];
     # how close to the goal we want to get
 
 # Obstacles
@@ -135,6 +135,7 @@ iterations = 20
 Γ = 1
 xs2 = zeros(Float64, iterations, N)
 ys2 = zeros(Float64, iterations, N)
+faults = zeros(Int, 1)
 for i = 1:iterations
         w = Γ * ρ * randn(Float64, (2, N - 1))
         y = zeros(4, N)
@@ -147,10 +148,25 @@ for i = 1:iterations
                         u += K_out[get_cone(j, k), :, :]*w[:, k]
                 end
                 y[:,j] = A*y[:, j-1] + Bw*w[:, j-1] + B*u
+                for o in obj
+                        o_size_temp = size(o)
+                        o_size = o_size_temp[1]
+                        rhs = zeros(Float64, o_size, 1)
+                        for o2 = 1:o_size
+                                rhs[o2,1] = q[o[o2]]
+                        end
+                        y_vec = zeros(Float64, 2, 1)
+                        y_vec[1,1] = y[1,j]
+                        y_vec[2,1] = y[3,j]
+                        if sum(P[o,:]*y_vec.<= rhs) == o_size
+                                faults[1] += 1
+                        end
+                end
         end
         xs2[i, :] = y[1,:]
         ys2[i, :] = y[3,:];
 end
+println(faults)
 
 plot(rectangle(0.035,0.03,0.015,0), opacity=.5, legend=:none)
 plot!(xs2[:,:]', ys2[:,:]', linestyle=:dash, markershape=:circle, ms=2)
@@ -181,11 +197,11 @@ function makePq(points)
         return (P, q)
 end
 
-polygons = [[(0.015,0),(0.015,0.03),(0.05,0.03),(0.05,0)]]
-
-pl = plot()
-for p in polygons
-        display(plot!(Shape(p), fillcolor = plot_color(:yellow, 0.3)))
-end
-
-Pp,qp = makePq(polygons)
+# polygons = [[(0.015,0),(0.015,0.03),(0.05,0.03),(0.05,0)]]
+#
+# pl = plot()
+# for p in polygons
+#         display(plot!(Shape(p), fillcolor = plot_color(:yellow, 0.3)))
+# end
+#
+# Pp,qp = makePq(polygons)
