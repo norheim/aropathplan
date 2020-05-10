@@ -18,9 +18,9 @@ T = 0.9
 N = Int(T/dt);
 x0 = [0;0;0;0]
 xN = [0.03;0;0.035;0]
-ϵ = [1e-5;
+ϵ = [1e-4;
      0.00125;
-     1e-5;
+     1e-4;
      0.00125];
     # how close to the goal we want to get
 
@@ -131,7 +131,7 @@ au_out = value.(au)
 
 rectangle(w, h, x, y) = Shape(ones(4)*x + [0,w,w,0], ones(4)*y + [0,0,h,h])
 
-iterations = 100
+iterations = 20
 Γ = 1
 xs2 = zeros(Float64, iterations, N)
 ys2 = zeros(Float64, iterations, N)
@@ -154,3 +154,38 @@ end
 
 plot(rectangle(0.035,0.03,0.015,0), opacity=.5, legend=:none)
 plot!(xs2[:,:]', ys2[:,:]', linestyle=:dash, markershape=:circle, ms=2)
+
+
+# Polygon constructor
+ap = (p1,p2) -> [p1[2]-p2[2],p2[1]-p1[1]]
+bp = (p1,p2) -> p2[1]*p1[2]-p1[1]*p2[2]
+function makePq(points)
+        s = size(points)
+        s2 = zeros(Int, s[1])
+        for i = 1:s[1]
+                s3 = size(points[i])
+                s2[i] = s3[1]
+        end
+        P = zeros(sum(s2), 2)
+        q = zeros(sum(s2))
+        idx = 1
+        for i = 1:s[1]
+                for (p1,p2) in zip(points[i],
+                        vcat(points[i][2:end],points[i][1]))
+                        println(p1,p2)
+                        P[idx,:] = ap(p1, p2)
+                        q[idx] = bp(p1, p2)
+                        idx += 1
+                end
+        end
+        return (P, q)
+end
+
+polygons = [[(0.015,0),(0.015,0.03),(0.05,0.03),(0.05,0)]]
+
+pl = plot()
+for p in polygons
+        display(plot!(Shape(p), fillcolor = plot_color(:yellow, 0.3)))
+end
+
+Pp,qp = makePq(polygons)
