@@ -45,7 +45,10 @@ for i=2:N+1
     Ak[i,:,:] = A*Ak[i-1,:,:]
 end
 Ai = i -> Ak[i+1,:,:]
-get_cone = (i,j) -> Int((i-2)*(i-3)/2)+j
+accumulate = n -> Int(n*(n+1)/2)
+get_cone = (i,j) -> accumulate(i-3)+j;
+get_ncone = n -> (i,j) -> accumulate(i-3)+j-accumulate(max(3+n,i)-(3+n));
+get_3cone = get_ncone(3)
 
 # Robustness parameters
 ϵ2 = 0.05; # Probability of failure
@@ -81,6 +84,17 @@ model = Model(optimizer_with_attributes(
         +sum(ρ*t[get_cone(k,i),:] for i=1:k-2)
         +ρ*mapslices(norm, P*Q*Bw, dims=2)[:]
         ) .<= -q+M*z[k-1,:]);
+
+# Limited K's
+# @constraint(model, [k=3:N], (P*Q*x_k_det(k,α)
+#         +ρ*mapslices(norm, sum(P*Q*Ai(k-i-2)*Bw)[l,:] for i=4:k-2, dims=2)[:]
+#         +sum(ρ*t[get_3cone(k,i),:] for i=1:min(k-2,3))
+#         +ρ*mapslices(norm, P*Q*Bw, dims=2)[:]
+#         ) .<= -q+M*z[k-1,:]);
+# @constraint(model, [k=3:N,i=1:min(k-2,3),l=1:m], vcat(t[get_3cone(k,i),l],
+#         (P*Q*Ai(k-i-2)*Bw)[l,:]+sum((P*Q*Ai(k-j-1)*B*K[get_3cone(j,i),:,:])[l,:]
+#                 for j=(i+1):(k-1))) in SecondOrderCone());
+
 
 # Maximum control (2 inequalities per k)
 @constraint(model, α[:,1] .<= au[:,1])
