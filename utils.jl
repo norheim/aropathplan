@@ -35,7 +35,7 @@ function makePq(points)
         for i = 1:s[1]
                 for (p1,p2) in zip(points[i],
                         vcat(points[i][2:end],points[i][1]))
-                        println(p1,p2)
+                        #println(p1,p2)
                         P[idx,:] = ap(p1, p2)
                         q[idx] = bp(p1, p2)
                         idx += 1
