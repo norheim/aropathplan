@@ -149,7 +149,7 @@ model = Model(optimizer_with_attributes(
 # get_cone(3,1)
 
 # Obstacles
-@constraint(model, [k=3:N,i=1:k-2,l=1:m], vcat(t[get_cone(k,i),l], (P*Q*Ai(k-i-2)*Bw)[l,:]+sum(
+@constraint(model, [k=3:N,i=1:k-2,l=1:m], vcat(t[get_cone(k,i),l], (P*Q*Ai(k-i-1)*Bw)[l,:]+sum(
             (P*Q*Ai(k-j-1)*B*K[get_cone(j+1,i),:,:])[l,:] for j=(i+1):(k-1))) in SecondOrderCone());
 # Control
 @constraint(model, [k=3:N-1,i=1:k-2,l=1:2], vcat(s[get_cone(k,i),l], sum(
@@ -171,7 +171,7 @@ au_out = value.(au)
 rectangle(w, h, x, y) = Shape(ones(4)*x + [0,w,w,0], ones(4)*y + [0,0,h,h])
 
 iterations = 10
-Γ = .125
+Γ = 1
 xs2 = zeros(Float64, iterations, N)
 ys2 = zeros(Float64, iterations, N)
 faults = zeros(Int, 1)
@@ -359,7 +359,7 @@ model = Model(optimizer_with_attributes(
 # get_cone(3,1)
 
 # Obstacles
-@constraint(model, [k=3:N,i=1:k-2,l=1:m], vcat(t[get_cone(k,i),l], (P*Q*Ai(k-i-2)*Bw)[l,:]+sum(
+@constraint(model, [k=3:N,i=1:k-2,l=1:m], vcat(t[get_cone(k,i),l], (P*Q*Ai(k-i-1)*Bw)[l,:]+sum(
             (P*Q*Ai(k-j-1)*B*K[get_cone(j+1,i),:,:])[l,:] for j=(i+1):(k-1))) in SecondOrderCone());
 # Control
 @constraint(model, [k=3:N-1,i=1:k-2,l=1:2], vcat(s[get_cone(k,i),l], sum(
