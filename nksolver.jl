@@ -7,8 +7,6 @@ Q[1,1] = Q[2,3] = -1
 bigM = 100; #Big M
 
 function pathplanner(problem, npastK=0, feasability=false)
-        #feasability=true
-        #ϵ_in = ϵ
         Ai, Bw, B, N, x_k_det, P, q, obj, xN, ϵ_in, ρ = problem
         PQ = P*Q
         Nobj = length(obj)
@@ -17,7 +15,7 @@ function pathplanner(problem, npastK=0, feasability=false)
                 npastK = N-2
         end
         get_nkcone = get_ncone(npastK)
-        N_K = get_ncone(npastK)(N, N-2)
+        N_K = get_ncone(npastK)(N, npastK)
 
         model = Model(optimizer_with_attributes(
                 () -> Gurobi.Optimizer(GRB_ENV), #"OutputFlag" => 0

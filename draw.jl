@@ -1,3 +1,4 @@
+using Plots
 rectangle(w, h, x, y) = Shape(ones(4)*x + [0,w,w,0], ones(4)*y + [0,0,h,h])
 
 function plot_goal(xN, ϵ)
