@@ -3,7 +3,7 @@ using JuMP, Gurobi, Plots, LinearAlgebra, Random
 GRB_ENV = Gurobi.Env();
 
 # Create model for dynamics
-dt = 0.1
+dt = 0.01
 A = zeros(4,4)+I
 A[1,2] = A[3,4] = dt
 B = zeros(4,2)
@@ -17,13 +17,13 @@ Bw = copy(B);
 T = 0.9
 N = Int(T/dt);
 # Choose n-K parameter(how many past "winds" we can use in our control)
-npastK = N-2
+npastK = 3
 x0 = [0;0;0;0]
 xN = [0.03;0;0.035;0]
-ϵ = [1e-4;
-     0.00255;
-     1e-4;
-     0.00255];
+ϵ = [9e-3;
+     0.022;
+     1.25e-2;
+     0.022];
     # how close to the goal we want to get
 
 # Obstacles
