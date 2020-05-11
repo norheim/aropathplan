@@ -2,7 +2,7 @@ Q = zeros(2,4)
 Q[1,1] = Q[2,3] = -1
 bigM = 100; #Big M
 
-function pathplanner(problem, feasability=false)
+function detpathplanner(problem, feasability=false)
     Ai, Bw, B, N, x_k_det, P, q, obj, xN, ϵ_in, ρ = problem
     PQ = P*Q
     Nobj = length(obj)
