@@ -1,0 +1,77 @@
+Max wind = 1
+
+N=8
+failure =.05
+epsilon = (.5, 5, 2, 5)
+objective = 7.344019636543e+01
+time = 3.48
+
+N=10
+failure = .05
+epsilon = (.5, 5, 2, 5)
+objective = 1.367398689950e+02
+time = 57.34
+
+N=12
+failure = .05
+epsilon = (.5, 5, 2, 5)
+objective = 2.194394348128e+02
+time = 231.42
+
+N=8
+failure = .01
+epsilon = (.5, 5, 2, 5)
+objective = 9.134398423117e+01
+time = 7.06
+
+N=10
+failure = .01
+epsilon = (.5, 5, 2, 5)
+objective = 1.696178849729e+02
+time = 19.54
+
+N=12
+failure = .01
+epsilon = (.5, 5, 2, 5)
+objective = 2.722791019750e+02
+
+N=15
+failure = .01
+epsilon = (.5, 5, 2, 5)
+objective = 4.767342916575e+02
+
+N=8
+failure = .01
+epsilon = (.5, 5, 2, 5)
+objective = 7.424004627605e+01
+time = 1.28
+
+N=10
+failure = .05
+epsilon = (.25, 5, 1, 5)
+objective = 1.379898689467e+02
+time = 56.09
+
+N=12
+failure = .05
+epsilon = (.25, 5, 1, 5)
+objective = 2.212394335176e+02
+time = 28.18
+
+N=8
+failure = .01
+epsilon = (.25, 5, 1, 5)
+objective = 9.214399896861e+01
+time = 2.63
+
+N=10
+failure = .01
+epsilon = (.25, 5, 1, 5)
+objective = 1.708678851803e+02
+time = 11.62
+
+N=12
+failure = .01
+epsilon = (.25, 5, 1, 5)
+objective = 2.740791016517e+02
+time = 39.66
