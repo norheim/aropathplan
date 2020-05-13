@@ -38,7 +38,7 @@ function pathplanner(problem, npastK=0, feasability=false)
         @variable(model, r[1:npastK, 1:4] >= 0) # (one for each state variable)
 
         @constraint(model, [k=1:N-1, i=1:Nobj],
-           sum(z[k,j] for j in obj[i]) == length(obj[i])-1) # Obstacles
+           sum(z[k,j] for j in obj[i]) <= length(obj[i])-1) # Obstacles
 
         function get_K_independent_vars(k, S=I, size=2)
                 if npastK+1<=k-2
@@ -55,7 +55,7 @@ function pathplanner(problem, npastK=0, feasability=false)
                 ) .<= -q+bigM*z[1,:])
         # Time steps k=3 to N:
         @constraint(model, [k=3:N], (PQ*x_k_det(k,α)
-                + get_K_independent_vars(k, PQ, 2)
+                + get_K_independent_vars(k, PQ, m)
                 + sum(ρ*t[get_nkcone(k, i),:] for i=1:min(k-2,npastK))
                 + ρ*mapslices(norm, PQ*Bw, dims=2)[:]
                 ) .<= -q+bigM*z[k-1,:])
@@ -110,9 +110,9 @@ function pathplanner(problem, npastK=0, feasability=false)
                 @objective(model, Min, sum(au))
                 optimize!(model)
                 K_val = value.(K)
-                K_out = (i,j) -> j <= min(i-2, npastK) ?
+                K_out = (i,j) -> (j <= min(i-2, npastK) ?
                         K_val[get_nkcone(i, j), :, :] :
-                        zeros(size(K_val)[[2, 3]])
-                return K_out, value.(α)
+                        zeros(size(K_val)[[2, 3]]))
+                return K_out, value.(α), objective_value(model)
         end
 end

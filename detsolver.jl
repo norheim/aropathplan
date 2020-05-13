@@ -18,7 +18,7 @@ function detpathplanner(problem)
     @constraint(model, [k=2:N], PQ*x[:,k] .<= -q + bigM*z[k-1,:] )
 
     @constraint(model, [k=1:N-1, i=1:Nobj],
-           sum(z[k,j] for j in obj[i]) == length(obj[i])-1) # Obstacles
+           sum(z[k,j] for j in obj[i]) <= length(obj[i])-1) # Obstacles
 
     @constraint(model, x[:,1] .== x0)
     @constraint(model, x[:,N] .== xN)
@@ -28,5 +28,5 @@ function detpathplanner(problem)
     @objective(model, Min, sum(au));
     optimize!(model)
 
-    return value.(x)[1,:],value.(x)[3,:]
+    return value.(x)[1,:],value.(x)[3,:], objective_value(model)
 end
