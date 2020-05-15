@@ -11,6 +11,7 @@ function get_dynamic_matrices(T, N)
     #D = zeros(2,2)
     Bw = copy(B);
 
+    # Generate A^k and make it easy to retrieve(to minimize calculation)
     Ak = zeros(N+1,size(A)...)
     Ak[1,:,:] = zeros(Int, size(A))+I
     for i=2:N+1
@@ -26,15 +27,17 @@ function get_dynamic_matrices(T, N)
 
     function simulate_stoc(x0, α, K, w)
         x = zeros(4,N)
+        au = zeros(2,N-1)
         x[:, 1] = x0
         for k = 2:N
             u = α[:, k - 1]
             for i = 1:k-2
                 u += K(k, i)*w[:,i]
             end
+            au[:, k-1] = abs.(u)
             x[:, k] = A*x[:, k-1] + Bw*w[:,k-1] + B*u
         end
-        return x
+        return x, au
     end
 
     return x_k_det, simulate_stoc, Ai, B, Bw
