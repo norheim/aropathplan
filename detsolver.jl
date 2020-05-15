@@ -3,7 +3,7 @@ Q[1,1] = Q[2,3] = -1
 bigM = 100; #Big M
 
 function detpathplanner(problem)
-    Ai, Bw, B, N, x_k_det, P, q, obj, xN, ϵ_in, ρ = problem
+    Ai, Bw, B, N, x_k_det, P, q, obj, xN, max_au, ϵ_in, ρ = problem
     PQ = P*Q
     Nobj = length(obj)
     m = length(q)
@@ -21,12 +21,14 @@ function detpathplanner(problem)
            sum(z[k,j] for j in obj[i]) <= length(obj[i])-1) # Obstacles
 
     @constraint(model, x[:,1] .== x0)
-    @constraint(model, x[:,N] .== xN)
+    @constraint(model, x[:,N] .<= xN+ϵ_in)
+    @constraint(model, x[:,N] .>= xN-ϵ_in)
     @constraint(model, [k=1:N-1], x[:,k+1] .== Ai(1)*x[:,k]+B*u[:,k])
     @constraint(model, u .<= au)
     @constraint(model, -au .<= u)
+    @constraint(model, au .<= max_au)
     @objective(model, Min, sum(au));
     optimize!(model)
 
-    return value.(x)[1,:],value.(x)[3,:], objective_value(model)
+    return value.(x)[1,:],value.(x)[3,:], objective_value(model), value.(au)
 end

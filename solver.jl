@@ -99,6 +99,6 @@ function pathplanner(problem, feasability=false)
                 optimize!(model)
                 K_val = value.(K)
                 K_out = (i,j) -> K_val[get_cone(i, j), :, :]
-                return K_out, value.(α)
+                return K_out, value.(α), objective_value(model)
         end
 end

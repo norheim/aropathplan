@@ -2,12 +2,13 @@ using JuMP, Gurobi, LinearAlgebra
 GRB_ENV = Gurobi.Env();
 include("utils.jl")
 
-Q = zeros(2,4)
+Q = zeros(2,4) # Matrix to recover -x and -y coordinates from state
 Q[1,1] = Q[2,3] = -1
-bigM = 100; #Big M
+bigM = 100; # Big M (do not make too big, otherwise need to adjust
+            # tolerance of sovler)
 
 function pathplanner(problem, npastK=0, feasability=false)
-        Ai, Bw, B, N, x_k_det, P, q, obj, xN, ϵ_in, ρ = problem
+        Ai, Bw, B, N, x_k_det, P, q, obj, xN, max_au, ϵ_in, ρ = problem
         PQ = P*Q
         Nobj = length(obj)
         m = length(q)
@@ -61,6 +62,7 @@ function pathplanner(problem, npastK=0, feasability=false)
                 ) .<= -q+bigM*z[k-1,:])
 
         # Maximum control (2 inequalities per k)
+        @constraint(model, au .<= max_au)
         @constraint(model, α[:, 1] .<= au[:, 1])
         @constraint(model, -au[:, 1] .<= α[:, 1])
         @constraint(model, [k=2:N-1], (α[:, k]
@@ -100,6 +102,9 @@ function pathplanner(problem, npastK=0, feasability=false)
                 (Ai(N-i-1)*Bw)[l,:]+sum(
                 (Ai(N-j-1)*B*K[get_nkcone(j + 1, i),:,:])[l,:] for j=(i+1):(N-1)))
                 in SecondOrderCone())
+
+        # Time-out to return result
+        set_time_limit_sec(model, 800)
 
         # Objective
         if feasability
